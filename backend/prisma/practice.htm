@@ -1,0 +1,11 @@
+anches — Why We Use Them Think of a branch as your own private copy of the
+project to work in, so you don’t accidentally break everyone else’s code. We all
+work on dev, not main. See all branches: bash git branch -a Switch to an
+existing branch: bash git checkout dev Create a NEW branch (for your specific
+task) and switch to it in one step: bash git checkout -b your-name/your-task
+Example: bash git checkout -b sara/user-profile-endpoint Go back to a branch you
+already have: bash git checkout dev 5. Your Daily Workflow (step by step) Every
+time you sit down to work: git checkout dev git pull git checkout -b
+your-name/your-task Now write your code. When you’re ready to save progress: git
+add . git commit -m "describe what you did"git push -u origin
+your-name/your-task
