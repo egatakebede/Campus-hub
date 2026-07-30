@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-<<<<<<< HEAD
     "@prisma/client": "^7.9.1",
     "@supabase/supabase-js": "^2.111.0",
     "express": "^5.2.1",
@@ -18,11 +17,8 @@
   },
   "devDependencies": {
     "prisma": "^7.9.1"
-=======
-    "express": "^5.2.1"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
->>>>>>> dev
   }
 }
