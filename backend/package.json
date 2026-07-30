@@ -11,5 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^5.2.1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
