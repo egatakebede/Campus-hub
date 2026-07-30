@@ -1,81 +1,40 @@
-const prisma = require("../lib/prisma");
-async function getMyProfile(req, res) {
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
+
+const getPublicProfile = async (req, res) => {
   try {
-    // TODO: Replace with req.user.telegramId after authentication is merged
-    const telegramId = BigInt(123456789);
+    const { telegramId } = req.params;
+
+    // Validate if telegramId is a valid numeric string before converting to BigInt
+    if (!/^\d+$/.test(telegramId)) {
+      return res.status(400).json({ message: "Invalid telegram ID format" });
+    }
 
     const user = await prisma.user.findUnique({
-      where: {
-        telegramId,
-      },
+      where: { telegramId: BigInt(telegramId) },
     });
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json({
-  ...user,
-  telegramId: user.telegramId.toString(),
-});
+    const publicProfile = {
+      first_name: user.first_name,
+      last_name: user.last_name,
+      username: user.username,
+      bio: user.bio,
+      profile_pic_url: user.profile_pic_url,
+      department: user.department,
+      year_of_study: user.year_of_study,
+    };
+
+    return res.status(200).json(publicProfile);
   } catch (error) {
-  console.error("GET /users/me error:");
-  console.error(error);
-
-  return res.status(500).json({
-    message: error.message,
-  });
-}
-}
-async function updateMyProfile(req, res) {
-  try {
-    // TODO: Replace with req.user.telegramId after authentication is merged
-    const telegramId = BigInt(123456789);
-
-    const {
-      name,
-      phone,
-      department,
-      bio,
-      yearOfStudy,
-      profilePictureUrl,
-    } = req.body;
-
-    if (!name || !phone || !department) {
-      return res.status(400).json({
-        message: "Name, phone and department are required",
-      });
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: {
-        telegramId,
-      },
-      data: {
-        name,
-        phone,
-        department,
-        bio,
-        yearOfStudy,
-        profilePictureUrl,
-      },
-    });
-
-   return res.status(200).json({
-  ...updatedUser,
-  telegramId: updatedUser.telegramId.toString(),
-});
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    console.error("Error fetching public profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
 module.exports = {
-  getMyProfile,
-  updateMyProfile,
+  getPublicProfile,
 };
