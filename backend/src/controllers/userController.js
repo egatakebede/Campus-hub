@@ -16,14 +16,18 @@ async function getMyProfile(req, res) {
       });
     }
 
-    return res.status(200).json(user);
+    return res.status(200).json({
+  ...user,
+  telegramId: user.telegramId.toString(),
+});
   } catch (error) {
-    console.error(error);
+  console.error("GET /users/me error:");
+  console.error(error);
 
-    return res.status(500).json({
-      message: "Internal server error",
-    });
-  }
+  return res.status(500).json({
+    message: error.message,
+  });
+}
 }
 async function updateMyProfile(req, res) {
   try {
@@ -59,7 +63,10 @@ async function updateMyProfile(req, res) {
       },
     });
 
-    return res.status(200).json(updatedUser);
+   return res.status(200).json({
+  ...updatedUser,
+  telegramId: updatedUser.telegramId.toString(),
+});
   } catch (error) {
     console.error(error);
 
