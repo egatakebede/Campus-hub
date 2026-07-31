@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { uploadImage } = require("../services/uploadService");
 
 // POST /listings
 async function createListing(req, res) {
@@ -46,7 +47,6 @@ async function createListing(req, res) {
 // POST /listings/upload-image
 async function uploadListingImage(req, res) {
   try {
-    const { uploadImage } = require("../services/uploadService");
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
     }
