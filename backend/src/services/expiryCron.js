@@ -6,7 +6,7 @@ async function checkExpiry() {
        await prisma.listing.updateMany({
             where: {
                 status: "ACTIVE",
-                expiryAt: {
+                expiresAt: {
                     lte: now
                 }
             },
