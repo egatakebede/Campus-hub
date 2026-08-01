@@ -7,9 +7,9 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const HOST = process.env.HOST || "localhost";
 
-app.use(express.json());
-
 const usersRouter = require("./src/routes/users");
+const categoriesRouter = require("./src/routes/admin/categories");
+app.use(express.json());
 app.use("/users", usersRouter);
 app.use("/admin/categories", categoriesRouter);
 
