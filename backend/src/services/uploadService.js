@@ -17,7 +17,7 @@ function getSupabaseClient() {
 
 async function uploadImage(file, bucketName) {
   if (!file || !file.buffer) {
-    throw new Error("No file buffer provided");
+    throw new Error("No file provided");
   }
 
   if (!ALLOWED_TYPES.includes(file.mimetype)) {
