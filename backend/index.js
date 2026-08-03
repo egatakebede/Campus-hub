@@ -21,9 +21,13 @@ app.use("/auth", authRouter);
 app.use("/admin/categories", categoriesRouter);
 app.use("/listings", listingRoutes);
 
-// Health check
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+const listingRoutes = require('./src/routes/listings');
+const servicesRoutes = require('./src/routes/services');
+app.use('/listings', listingRoutes);
+app.use('/services', servicesRoutes);
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 app.listen(PORT, () => {
