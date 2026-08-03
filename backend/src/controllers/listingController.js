@@ -88,6 +88,43 @@ async function getListings(req, res) {
   }
 }
 
+// GET /listings/search
+async function searchListings(req, res) {
+  try {
+    const q = req.query.q?.toString().trim();
+
+    if (!q) {
+      return res.status(200).json([]);
+    }
+
+    const listings = await prisma.listing.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        seller: {
+          select: { name: true, username: true },
+        },
+      },
+    });
+
+    const safeListings = listings.map((l) => ({
+      ...l,
+      sellerId: l.sellerId.toString(),
+    }));
+
+    return res.status(200).json(safeListings);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to search listings" });
+  }
+}
+
 // GET /listings/:id
 async function getListingDetail(req, res) {
   try {
@@ -224,6 +261,7 @@ module.exports = {
   createListing,
   uploadListingImage,
   getListings,
+  searchListings,
   getListingDetail,
   updateListing,
   deleteListing,
