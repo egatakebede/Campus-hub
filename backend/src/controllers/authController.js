@@ -1,20 +1,15 @@
+const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 
 const telegramAuth = async (req, res, next) => {
   try {
-    const {
-      id,
-      first_name,
-      last_name,
-      username,
-    } = req.telegramUser;
+    const { id, first_name, last_name, username } = req.telegramUser;
 
     const telegramId = BigInt(id);
 
-    const name = [first_name, last_name]
-      .filter(Boolean)
-      .join(" ");
+    const name = [first_name, last_name].filter(Boolean).join(" ");
 
+    // 1. Upsert User (Yodit's logic)
     const user = await prisma.user.upsert({
       where: {
         telegramId,
@@ -30,14 +25,30 @@ const telegramAuth = async (req, res, next) => {
       },
     });
 
-    const isOnboarded =
-      Boolean(user.name) &&
-      Boolean(user.department);
+    // 2. Determine onboarded status
+    const isOnboarded = user.status === "ACTIVE";
 
-    req.user = user;
-    req.isOnboarded = isOnboarded;
+    // 3. Issue signed JWT (expires in 7 days)
+    const token = jwt.sign(
+      {
+        telegramId: user.telegramId.toString(),
+        status: user.status,
+        isModerator: user.isModerator || false,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
 
-    return next();
+    // 4. Return shaped response
+    return res.status(200).json({
+      token,
+      user: {
+        telegramId: user.telegramId.toString(),
+        status: user.status,
+        isModerator: user.isModerator || false,
+        isOnboarded,
+      },
+    });
   } catch (error) {
     next(error);
   }
