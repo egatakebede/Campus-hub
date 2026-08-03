@@ -1,5 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../lib/prisma");
 
 // Hardcoded user ID for local endpoint testing (matches the user in your database)
 const TEST_USER_ID = BigInt("123456789");
@@ -17,7 +16,7 @@ const formatBookmark = (bookmark) => ({
 /**
  * 1. Create a Bookmark (POST /bookmarks)
  */
-const createBookmark = async (req, res) => {
+const toggleBookmark = async (req, res) => {
   try {
     const { target_id, target_type } = req.body;
 
@@ -79,7 +78,7 @@ const getMyBookmarks = async (req, res) => {
 /**
  * 3. Delete a Bookmark (DELETE /bookmarks/:id)
  */
-const deleteBookmark = async (req, res) => {
+const removeBookmark = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -115,7 +114,7 @@ const deleteBookmark = async (req, res) => {
 };
 
 module.exports = {
-  createBookmark,
+  toggleBookmark,
   getMyBookmarks,
-  deleteBookmark,
+  removeBookmark,
 };
