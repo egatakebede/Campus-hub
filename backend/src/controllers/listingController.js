@@ -21,6 +21,8 @@ async function createListing(req, res) {
     // TODO: replace with req.user.telegramId once T-AUTH-003 merges
     const sellerId = BigInt(123456789);
 
+    const expiresAt = new Date(Date.now() + 40 * 24 * 60 * 60 * 1000);
+
     const listing = await prisma.listing.create({
       data: {
         sellerId,
@@ -30,14 +32,17 @@ async function createListing(req, res) {
         price,
         imageUrls: images || [],
         status: "ACTIVE",
-        expiresAt: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000),
+        expiresAt
       },
     });
 
-    res.status(201).json({
+    // Convert BigInt to string for JSON response
+    const responseListing = {
       ...listing,
-      sellerId: listing.sellerId.toString(),
-    });
+      sellerId: listing.sellerId.toString()
+    };
+
+    res.status(201).json(responseListing);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to create listing" });
