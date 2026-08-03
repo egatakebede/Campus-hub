@@ -16,6 +16,8 @@ model User {
   bio               String?
   profilePictureUrl String?
   status            UserStatus       @default(PENDING)
+  isModerator       Boolean          @default(false)
+  showPhone         Boolean          @default(true)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   bookmarks         Bookmark[]
