@@ -3,22 +3,29 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+
   "scripts": {
-    "start": "node index.js"
-  },
+  "start": "node index.js",
+  "test": "jest"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@supabase/supabase-js": "^2.111.0",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "prisma": "^7.9.1"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
   },
   "devDependencies": {
+    "nodemon": "^3.1.14",
     "prisma": "^6.19.3"
   }
 }

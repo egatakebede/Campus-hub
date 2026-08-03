@@ -1,46 +1,41 @@
+require("dotenv").config();
 const { createClient } = require("@supabase/supabase-js");
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
 async function uploadImage(file, bucketName) {
   if (!file) {
     throw new Error("No file provided");
   }
 
-  const allowedTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ];
-
-  if (!allowedTypes.includes(file.mimetype)) {
+  if (!ALLOWED_TYPES.includes(file.mimetype)) {
     throw new Error("Invalid file type");
   }
 
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > MAX_SIZE) {
     throw new Error("File too large");
   }
 
   const fileName = `${Date.now()}-${file.originalname}`;
 
-  const { error } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from(bucketName)
     .upload(fileName, file.buffer, {
-      contentType: file.mimetype,
+      contentType: file.mimetype
     });
 
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
 
-  const { data } = supabase.storage
+  const { data: publicUrlData } = supabase.storage
     .from(bucketName)
     .getPublicUrl(fileName);
 
-  return data.publicUrl;
+  return publicUrlData.publicUrl;
 }
 
-module.exports = uploadImage;
+module.exports = { uploadImage };
