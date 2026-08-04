@@ -4,6 +4,7 @@ const {
   createListing,
   uploadListingImage,
   getListings,
+  searchListings,
   getListingDetail,
   updateListing,
   deleteListing,
@@ -13,6 +14,7 @@ const {
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+router.get("/search", searchListings);
 router.get("/", getListings);
 router.get("/:id", getListingDetail);
 router.post("/", createListing);
