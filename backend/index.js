@@ -9,12 +9,13 @@ const HOST = process.env.HOST || "localhost";
 
 const usersRouter = require("./src/routes/users");
 const categoriesRouter = require("./src/routes/admin/categories");
+const listingRoutes = require('./src/routes/listings');
+const bookmarkRoutes = require('./src/routes/bookmarks');
 app.use(express.json());
 app.use("/users", usersRouter);
 app.use("/admin/categories", categoriesRouter);
-
-const listingRoutes = require('./src/routes/listings');
 app.use('/listings', listingRoutes);
+app.use('/bookmarks', bookmarkRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
