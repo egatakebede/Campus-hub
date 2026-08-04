@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  telegramId        BigInt           @id
+  name              String
+  username          String?          @unique
+  phone             String?
+  department        String
+  yearOfStudy       Int
+  bio               String?
+  profilePictureUrl String?
+  status            UserStatus       @default(PENDING)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  bookmarks         Bookmark[]
+  listings          Listing[]
+  reports           Report[]
+  serviceProfiles   ServiceProfile[]
+
+  @@index([status])
+}
+
+model Category {
+  id              Int              @id @default(autoincrement())
+  name            String
+  type            CategoryType
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  listings        Listing[]
+  serviceProfiles ServiceProfile[]
+
+  @@unique([name, type])
+  @@index([type])
+}
+
+model Listing {
+  id          String        @id @default(uuid()) @db.Uuid
+  sellerId    BigInt
+  categoryId  Int
+  title       String
+  description String
+  price       Decimal       @db.Decimal(10, 2)
+  imageUrls   String[]
+  status      ListingStatus @default(ACTIVE)
+  expiresAt   DateTime
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  category    Category      @relation(fields: [categoryId], references: [id])
+  seller      User          @relation(fields: [sellerId], references: [telegramId])
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model ServiceProfile {
+  id              String   @id @default(uuid()) @db.Uuid
+  providerId      BigInt
+  categoryId      Int
+  title           String
+  description     String
+  portfolioImages String[]
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  category        Category @relation(fields: [categoryId], references: [id])
+  provider        User     @relation(fields: [providerId], references: [telegramId])
+
+  @@index([providerId])
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+model Bookmark {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     BigInt
+  targetId   String     @db.Uuid
+  targetType TargetType
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  user       User       @relation(fields: [userId], references: [telegramId])
+
+  @@unique([userId, targetId, targetType])
+  @@index([userId])
+}
+
+model Report {
+  id         String       @id @default(uuid()) @db.Uuid
+  reporterId BigInt
+  targetId   String       @db.Uuid
+  targetType TargetType
+  reason     String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  reporter   User         @relation(fields: [reporterId], references: [telegramId])
+
+  @@unique([reporterId, targetId, targetType])
+  @@index([status])
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
+}
+
+enum CategoryType {
+  MARKETPLACE
+  SERVICE
+}
+
+enum TargetType {
+  LISTING
+  SERVICE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}
