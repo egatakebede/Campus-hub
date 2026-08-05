@@ -27,6 +27,44 @@ async function getServices(req, res) {
   }
 }
 
+async function searchServices(req, res) {
+  try {
+    const q = req.query.q?.toString().trim();
+
+    if (!q) {
+      return res.status(200).json([]);
+    }
+
+    const services = await prisma.serviceProfile.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        provider: { select: { name: true, username: true } },
+      },
+    });
+
+    const safeServices = services.map((service) => ({
+      ...service,
+      providerId: service.providerId.toString(),
+      provider: {
+        name: service.provider.name,
+        username: service.provider.username,
+      },
+    }));
+
+    return res.status(200).json(safeServices);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to search services" });
+  }
+}
+
 async function getServiceDetail(req, res) {
   try {
     const { id } = req.params;
@@ -78,4 +116,9 @@ async function uploadServiceImage(req, res) {
   }
 }
 
-module.exports = { getServices, getServiceDetail, uploadServiceImage };
+module.exports = {
+  getServices,
+  searchServices,
+  getServiceDetail,
+  uploadServiceImage,
+};

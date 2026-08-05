@@ -1,13 +1,14 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
+const jwtVerify = require("../../middleware/jwtVerify");
+const requireModerator = require("../../middleware/requireModerator");
 const {
   getPendingUsers,
   approveUser,
   rejectUser,
 } = require("../../controllers/moderationController");
 
-// TODO: Attach jwtVerify + requireModerator middleware here once merged
-// router.use(jwtVerify, requireModerator);
+router.use(jwtVerify, requireModerator);
 
 router.get("/", getPendingUsers);
 router.patch("/:id/approve", approveUser);

@@ -39,6 +39,10 @@ const approveUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    if (!/^[0-9]+$/.test(id)) {
+      return res.status(400).json({ error: "Invalid telegram ID format" });
+    }
+
     const user = await prisma.user.update({
       where: { telegramId: BigInt(id) },
       data: { status: "ACTIVE" },
@@ -59,6 +63,10 @@ const approveUser = async (req, res, next) => {
 const rejectUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    if (!/^[0-9]+$/.test(id)) {
+      return res.status(400).json({ error: "Invalid telegram ID format" });
+    }
 
     const user = await prisma.user.update({
       where: { telegramId: BigInt(id) },
