@@ -1,9 +1,9 @@
-﻿const prisma = require("../lib/prisma");
+const prisma = require("../lib/prisma");
 
 const getPendingUsers = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
