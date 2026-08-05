@@ -26,8 +26,8 @@ app.use('/listings', listingRoutes);
 app.use('/bookmarks', bookmarkRoutes);
 app.use('/reports', reportRoutes);
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 app.listen(PORT, () => {
