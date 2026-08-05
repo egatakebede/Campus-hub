@@ -19,7 +19,7 @@ async function createListing(req, res) {
     }
 
     // TODO: replace with req.user.telegramId once T-AUTH-003 merges
-    const sellerId = BigInt(123456789);
+    const sellerId = BigInt(req.user.telegramId);
 
     const expiresAt = new Date(Date.now() + 40 * 24 * 60 * 60 * 1000);
 
@@ -174,7 +174,7 @@ async function updateListing(req, res) {
     }
 
     // TODO: replace with req.user.telegramId once T-AUTH-003 merges
-    const requesterId = BigInt(123456789);
+    const requesterId = BigInt(req.user.telegramId);
     if (existing.sellerId !== requesterId) {
       return res.status(403).json({ error: "Not authorized to edit this listing" });
     }
@@ -218,12 +218,15 @@ async function deleteListing(req, res) {
     }
 
     // TODO: replace with req.user.telegramId once T-AUTH-003 merges
-    const requesterId = BigInt(123456789);
+    const requesterId = BigInt(req.user.telegramId);
     if (existing.sellerId !== requesterId) {
       return res.status(403).json({ error: "Not authorized to delete this listing" });
     }
 
     await prisma.listing.delete({ where: { id } });
+  
+
+    res.status(200).json({ message: "Listing deleted successfully" });
 
     res.status(200).json({ message: "Listing deleted successfully" });
   } catch (err) {
@@ -241,7 +244,12 @@ async function markAsSold(req, res) {
     if (!existing) {
       return res.status(404).json({ error: "Listing not found" });
     }
+   const requesterId = BigInt(req.user.telegramId);
 
+   if (existing.sellerId !== requesterId) {
+     return res.status(403).json({
+    error: "Not authorized to mark this listing as sold",});
+ }
     const updated = await prisma.listing.update({
       where: { id },
       data: { status: "SOLD" },
