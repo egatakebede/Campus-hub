@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const jwtVerify = require("../middleware/jwtVerify");
+const requireActive = require("../middleware/requireActive");
 const {
   toggleBookmark,
   getMyBookmarks,
@@ -7,12 +9,12 @@ const {
 } = require("../controllers/bookmarkController");
 
 // POST /bookmarks - Create a bookmark
-router.post("/", toggleBookmark);
+router.post("/", jwtVerify, requireActive, toggleBookmark);
 
 // GET /bookmarks - Fetch user bookmarks
-router.get("/", getMyBookmarks);
+router.get("/", jwtVerify, requireActive, getMyBookmarks);
 
 // DELETE /bookmarks/:id - Delete a bookmark
-router.delete("/:id", removeBookmark);
+router.delete("/:id", jwtVerify, requireActive, removeBookmark);
 
 module.exports = router;

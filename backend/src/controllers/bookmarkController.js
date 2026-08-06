@@ -1,8 +1,5 @@
 const prisma = require("../lib/prisma");
 
-// Hardcoded user ID for local endpoint testing (matches the user in your database)
-const TEST_USER_ID = BigInt("123456789");
-
 /**
  * Helper function to safely map BigInt values to Strings for JSON response
  */
@@ -26,9 +23,15 @@ const toggleBookmark = async (req, res) => {
         .json({ error: "target_id and target_type are required" });
     }
 
+    const telegramId = req.user?.telegramId;
+
+    if (!telegramId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const bookmark = await prisma.bookmark.create({
       data: {
-        userId: TEST_USER_ID,
+        userId: BigInt(telegramId),
         targetId: String(target_id),
         targetType: target_type.toUpperCase(),
       },
@@ -54,9 +57,15 @@ const toggleBookmark = async (req, res) => {
  */
 const getMyBookmarks = async (req, res) => {
   try {
+    const telegramId = req.user?.telegramId;
+
+    if (!telegramId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const bookmarks = await prisma.bookmark.findMany({
       where: {
-        userId: TEST_USER_ID,
+        userId: BigInt(telegramId),
       },
       orderBy: {
         createdAt: "desc",
@@ -81,6 +90,11 @@ const getMyBookmarks = async (req, res) => {
 const removeBookmark = async (req, res) => {
   try {
     const { id } = req.params;
+    const telegramId = req.user?.telegramId;
+
+    if (!telegramId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     // 1. Find the bookmark first to check if it exists
     const bookmark = await prisma.bookmark.findUnique({
@@ -92,7 +106,7 @@ const removeBookmark = async (req, res) => {
     }
 
     // 2. Enforce ownership check
-    if (bookmark.userId !== TEST_USER_ID) {
+    if (bookmark.userId !== BigInt(telegramId)) {
       return res
         .status(403)
         .json({ error: "Unauthorized to delete this bookmark" });
