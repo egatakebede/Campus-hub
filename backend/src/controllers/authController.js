@@ -1,3 +1,22 @@
+// Logic for User Registration
+const registerUser = (req, res) => {
+  res.status(201).json({
+    message: "User registered successfully (placeholder)",
+  });
+};
+
+// Logic for User Login
+const loginUser = (req, res) => {
+  res.status(200).json({
+    message: "User logged in successfully (placeholder)",
+  });
+};
+
+// Export functions so the router can use them
+module.exports = {
+  registerUser,
+  loginUser,
+};
 const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 
@@ -6,10 +25,8 @@ const telegramAuth = async (req, res, next) => {
     const { id, first_name, last_name, username } = req.telegramUser;
 
     const telegramId = BigInt(id);
-
     const name = [first_name, last_name].filter(Boolean).join(" ");
 
-    // 1. Upsert User (Yodit's logic)
     const user = await prisma.user.upsert({
       where: {
         telegramId,
@@ -25,10 +42,8 @@ const telegramAuth = async (req, res, next) => {
       },
     });
 
-    // 2. Determine onboarded status
     const isOnboarded = user.status === "ACTIVE";
 
-    // 3. Issue signed JWT (expires in 7 days)
     const token = jwt.sign(
       {
         telegramId: user.telegramId.toString(),
@@ -39,7 +54,6 @@ const telegramAuth = async (req, res, next) => {
       { expiresIn: "7d" },
     );
 
-    // 4. Return shaped response
     return res.status(200).json({
       token,
       user: {

@@ -23,7 +23,10 @@ describe('bookmark controller', () => {
   }
 
   test('toggleBookmark creates a bookmark and returns 201', async () => {
-    const req = { body: { target_id: 'listing-1', target_type: 'listing' } };
+    const req = {
+      user: { telegramId: '999999999' },
+      body: { target_id: 'listing-1', target_type: 'listing' },
+    };
     const res = createRes();
 
     prisma.bookmark.create.mockResolvedValueOnce({
@@ -39,7 +42,7 @@ describe('bookmark controller', () => {
 
     expect(prisma.bookmark.create).toHaveBeenCalledWith({
       data: {
-        userId: BigInt(123456789),
+        userId: BigInt(999999999),
         targetId: 'listing-1',
         targetType: 'LISTING',
       },
@@ -56,7 +59,10 @@ describe('bookmark controller', () => {
   });
 
   test('toggleBookmark returns 409 for duplicate bookmarks', async () => {
-    const req = { body: { target_id: 'listing-1', target_type: 'listing' } };
+    const req = {
+      user: { telegramId: '999999999' },
+      body: { target_id: 'listing-1', target_type: 'listing' },
+    };
     const res = createRes();
 
     const duplicateError = new Error('duplicate');
@@ -70,7 +76,7 @@ describe('bookmark controller', () => {
   });
 
   test('getMyBookmarks returns bookmarks for the current user', async () => {
-    const req = {};
+    const req = { user: { telegramId: '999999999' } };
     const res = createRes();
 
     prisma.bookmark.findMany.mockResolvedValueOnce([
@@ -81,7 +87,7 @@ describe('bookmark controller', () => {
 
     expect(prisma.bookmark.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: BigInt(123456789) },
+        where: { userId: BigInt(999999999) },
       })
     );
     expect(res.status).toHaveBeenCalledWith(200);
@@ -91,12 +97,12 @@ describe('bookmark controller', () => {
   });
 
   test('removeBookmark deletes owned bookmarks', async () => {
-    const req = { params: { id: 'bookmark-1' } };
+    const req = { user: { telegramId: '999999999' }, params: { id: 'bookmark-1' } };
     const res = createRes();
 
     prisma.bookmark.findUnique.mockResolvedValueOnce({
       id: 'bookmark-1',
-      userId: BigInt(123456789),
+      userId: BigInt(999999999),
     });
 
     await bookmarkController.removeBookmark(req, res);
