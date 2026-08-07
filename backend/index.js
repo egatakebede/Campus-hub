@@ -16,6 +16,7 @@ const adminReportsRouter = require("./src/routes/admin/reports");
 const listingRoutes = require("./src/routes/listings");
 const bookmarkRoutes = require("./src/routes/bookmarks");
 const reportRoutes = require("./src/routes/reports");
+const searchRoutes = require("./src/routes/search");
 
 app.use(express.json());
 
@@ -28,6 +29,7 @@ app.use("/admin/reports", adminReportsRouter);
 app.use("/listings", listingRoutes);
 app.use("/bookmarks", bookmarkRoutes);
 app.use("/reports", reportRoutes);
+app.use("/search", searchRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
