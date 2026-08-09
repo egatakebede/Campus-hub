@@ -121,4 +121,110 @@ module.exports = {
   searchServices,
   getServiceDetail,
   uploadServiceImage,
+  createService,
+  updateService,
+  deleteService,
 };
+
+async function createService(req, res) {
+  try {
+    const { title, description, category_id, portfolio_images } = req.body;
+    const providerId = req.user?.telegramId;
+
+    if (!providerId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!title || !description || !category_id) {
+      return res.status(400).json({ error: "title, description, and category_id are required" });
+    }
+
+    const images = Array.isArray(portfolio_images) ? portfolio_images : [];
+    if (images.length > 8) {
+      return res.status(400).json({ error: "Maximum 8 portfolio images allowed" });
+    }
+
+    const service = await prisma.serviceProfile.create({
+      data: {
+        providerId: BigInt(providerId),
+        categoryId: Number(category_id),
+        title,
+        description,
+        portfolioImages: images,
+        isActive: true,
+      },
+    });
+
+    return res.status(201).json({
+      ...service,
+      providerId: service.providerId.toString(),
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to create service" });
+  }
+}
+
+async function updateService(req, res) {
+  try {
+    const { id } = req.params;
+    const providerId = req.user?.telegramId;
+
+    const existing = await prisma.serviceProfile.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    if (existing.providerId.toString() !== String(providerId)) {
+      return res.status(403).json({ error: "Not authorized to edit this service" });
+    }
+
+    const { title, description, category_id, portfolio_images } = req.body;
+
+    if (portfolio_images && portfolio_images.length > 8) {
+      return res.status(400).json({ error: "Maximum 8 portfolio images allowed" });
+    }
+
+    const updated = await prisma.serviceProfile.update({
+      where: { id },
+      data: {
+        ...(title && { title }),
+        ...(description && { description }),
+        ...(category_id && { categoryId: Number(category_id) }),
+        ...(portfolio_images && { portfolioImages: portfolio_images }),
+      },
+    });
+
+    return res.status(200).json({
+      ...updated,
+      providerId: updated.providerId.toString(),
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to update service" });
+  }
+}
+
+async function deleteService(req, res) {
+  try {
+    const { id } = req.params;
+    const providerId = req.user?.telegramId;
+    const isModerator = req.user?.isModerator;
+
+    const existing = await prisma.serviceProfile.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    if (existing.providerId.toString() !== String(providerId) && !isModerator) {
+      return res.status(403).json({ error: "Not authorized to delete this service" });
+    }
+
+    await prisma.serviceProfile.delete({ where: { id } });
+
+    return res.status(200).json({ message: "Service deleted" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to delete service" });
+  }
+}
