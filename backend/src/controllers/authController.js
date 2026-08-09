@@ -1,22 +1,3 @@
-// Logic for User Registration
-const registerUser = (req, res) => {
-  res.status(201).json({
-    message: "User registered successfully (placeholder)",
-  });
-};
-
-// Logic for User Login
-const loginUser = (req, res) => {
-  res.status(200).json({
-    message: "User logged in successfully (placeholder)",
-  });
-};
-
-// Export functions so the router can use them
-module.exports = {
-  registerUser,
-  loginUser,
-};
 const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 
@@ -28,9 +9,7 @@ const telegramAuth = async (req, res, next) => {
     const name = [first_name, last_name].filter(Boolean).join(" ");
 
     const user = await prisma.user.upsert({
-      where: {
-        telegramId,
-      },
+      where: { telegramId },
       update: {},
       create: {
         telegramId,
