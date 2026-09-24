@@ -4,107 +4,34 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
 
 model User {
-  telegramId        BigInt           @id
-  name              String
-  username          String?          @unique
-  phone             String?
-  department        String
+  telegramId        BigInt     @id
+  name              String     @db.VarChar(100)
+  username          String?    @unique @db.VarChar(64)
+  phone             String?    @db.VarChar(20)
+  department        String     @db.VarChar(100)
   yearOfStudy       Int
-  bio               String?
+  bio               String?    @db.VarChar(500)
   profilePictureUrl String?
-  status            UserStatus       @default(PENDING)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  bookmarks         Bookmark[]
-  listings          Listing[]
-  reports           Report[]
-  serviceProfiles   ServiceProfile[]
+  status            UserStatus @default(PENDING)
+  role              UserRole   @default(STUDENT)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
-  @@index([status])
-}
-
-model Category {
-  id              Int              @id @default(autoincrement())
-  name            String
-  type            CategoryType
-  isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  bookmarks       Bookmark[]
   listings        Listing[]
+  reports         Report[]
   serviceProfiles ServiceProfile[]
 
-  @@unique([name, type])
-  @@index([type])
-}
-
-model Listing {
-  id          String        @id @default(uuid()) @db.Uuid
-  sellerId    BigInt
-  categoryId  Int
-  title       String
-  description String
-  price       Decimal       @db.Decimal(10, 2)
-  imageUrls   String[]
-  status      ListingStatus @default(ACTIVE)
-  expiresAt   DateTime
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  category    Category      @relation(fields: [categoryId], references: [id])
-  seller      User          @relation(fields: [sellerId], references: [telegramId])
-
-  @@index([sellerId])
-  @@index([categoryId])
   @@index([status])
-  @@index([expiresAt])
-}
-
-model ServiceProfile {
-  id              String   @id @default(uuid()) @db.Uuid
-  providerId      BigInt
-  categoryId      Int
-  title           String
-  description     String
-  portfolioImages String[]
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  category        Category @relation(fields: [categoryId], references: [id])
-  provider        User     @relation(fields: [providerId], references: [telegramId])
-
-  @@index([providerId])
-  @@index([categoryId])
-  @@index([isActive])
-}
-
-model Bookmark {
-  id         String     @id @default(uuid()) @db.Uuid
-  userId     BigInt
-  targetId   String     @db.Uuid
-  targetType TargetType
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  user       User       @relation(fields: [userId], references: [telegramId])
-
-  @@unique([userId, targetId, targetType])
-  @@index([userId])
-}
-
-model Report {
-  id         String       @id @default(uuid()) @db.Uuid
-  reporterId BigInt
-  targetId   String       @db.Uuid
-  targetType TargetType
-  reason     String
-  status     ReportStatus @default(PENDING)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  reporter   User         @relation(fields: [reporterId], references: [telegramId])
-
-  @@unique([reporterId, targetId, targetType])
-  @@index([status])
+  @@index([role])
 }
 
 enum UserStatus {
@@ -114,10 +41,29 @@ enum UserStatus {
   BANNED
 }
 
-enum ListingStatus {
-  ACTIVE
-  SOLD
-  EXPIRED
+enum UserRole {
+  STUDENT
+  MODERATOR
+  ADMIN
+}
+
+// ─────────────────────────────────────────────
+// CATEGORIES
+// ─────────────────────────────────────────────
+
+model Category {
+  id        Int          @id @default(autoincrement())
+  name      String       @db.VarChar(100)
+  type      CategoryType
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  listings        Listing[]
+  serviceProfiles ServiceProfile[]
+
+  @@unique([name, type])
+  @@index([type, isActive])
 }
 
 enum CategoryType {
@@ -125,13 +71,118 @@ enum CategoryType {
   SERVICE
 }
 
+// ─────────────────────────────────────────────
+// LISTINGS (marketplace)
+// ─────────────────────────────────────────────
+
+model Listing {
+  id          String        @id @default(uuid()) @db.Uuid
+  sellerId    BigInt
+  categoryId  Int
+  title       String        @db.VarChar(150)
+  description String        @db.VarChar(2000)
+  price       Decimal       @db.Decimal(10, 2)
+  imageUrls   String[]
+  status      ListingStatus @default(ACTIVE)
+  expiresAt   DateTime
+  soldAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  seller   User     @relation(fields: [sellerId], references: [telegramId], onDelete: Cascade)
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([status, expiresAt])
+  @@index([createdAt])
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  EXPIRED
+  REMOVED
+}
+
+// ─────────────────────────────────────────────
+// SERVICE PROFILES
+// ─────────────────────────────────────────────
+
+model ServiceProfile {
+  id              String            @id @default(uuid()) @db.Uuid
+  providerId      BigInt
+  categoryId      Int
+  title           String            @db.VarChar(150)
+  description     String            @db.VarChar(2000)
+  portfolioImages String[]
+  status          ServiceStatus     @default(ACTIVE)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  provider User     @relation(fields: [providerId], references: [telegramId], onDelete: Cascade)
+
+  @@index([providerId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// ─────────────────────────────────────────────
+// BOOKMARKS (polymorphic)
+// ─────────────────────────────────────────────
+
+model Bookmark {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     BigInt
+  targetId   String     @db.Uuid
+  targetType TargetType
+  createdAt  DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [telegramId], onDelete: Cascade)
+
+  @@unique([userId, targetId, targetType])
+  @@index([userId, createdAt])
+  @@index([targetId, targetType])
+}
+
 enum TargetType {
   LISTING
   SERVICE
+}
+
+// ─────────────────────────────────────────────
+// REPORTS (polymorphic)
+// ─────────────────────────────────────────────
+
+model Report {
+  id         String       @id @default(uuid()) @db.Uuid
+  reporterId BigInt
+  targetId   String       @db.Uuid
+  targetType TargetType
+  reason     String       @db.VarChar(500)
+  status     ReportStatus @default(PENDING)
+  reviewedBy BigInt?
+  reviewedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  reporter User @relation(fields: [reporterId], references: [telegramId], onDelete: Cascade)
+
+  @@unique([reporterId, targetId, targetType])
+  @@index([status, createdAt])
+  @@index([targetId, targetType])
 }
 
 enum ReportStatus {
   PENDING
   REVIEWED
   RESOLVED
+  DISMISSED
 }
