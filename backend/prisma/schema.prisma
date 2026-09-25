@@ -16,12 +16,15 @@ model User {
   bio               String?
   profilePictureUrl String?
   status            UserStatus       @default(PENDING)
+  isModerator       Boolean          @default(false)
+  showPhone         Boolean          @default(true)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   bookmarks         Bookmark[]
   listings          Listing[]
   reports           Report[]
   serviceProfiles   ServiceProfile[]
+  role              UserRole         @default(STUDENT)
 
   @@index([status])
 }
@@ -52,6 +55,7 @@ model Listing {
   expiresAt   DateTime
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
   category    Category      @relation(fields: [categoryId], references: [id])
   seller      User          @relation(fields: [sellerId], references: [telegramId])
 
@@ -59,24 +63,27 @@ model Listing {
   @@index([categoryId])
   @@index([status])
   @@index([expiresAt])
+  @@index([deletedAt])
 }
 
 model ServiceProfile {
-  id              String   @id @default(uuid()) @db.Uuid
+  id              String    @id @default(uuid()) @db.Uuid
   providerId      BigInt
   categoryId      Int
   title           String
   description     String
   portfolioImages String[]
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  category        Category @relation(fields: [categoryId], references: [id])
-  provider        User     @relation(fields: [providerId], references: [telegramId])
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  category        Category  @relation(fields: [categoryId], references: [id])
+  provider        User      @relation(fields: [providerId], references: [telegramId])
 
   @@index([providerId])
   @@index([categoryId])
   @@index([isActive])
+  @@index([deletedAt])
 }
 
 model Bookmark {
@@ -134,4 +141,10 @@ enum ReportStatus {
   PENDING
   REVIEWED
   RESOLVED
+}
+
+enum UserRole {
+  STUDENT
+  MODERATOR
+  ADMIN
 }
