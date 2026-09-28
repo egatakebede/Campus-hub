@@ -1,10 +1,10 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables — never commit real values
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Logs
 npm-debug.log*

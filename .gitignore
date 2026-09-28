@@ -1,0 +1,38 @@
+# Backend deps (frontend has its own .gitignore)
+backend/node_modules/
+
+# Frontend is a separate repo — do not track here
+frontend/
+
+# Environment files — never commit
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs
+*.log
+server.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Build output
+**/dist/
+**/build/
+
+# Coverage
+**/coverage/
+
+# Tooling
+.kilo/
+.trunk/
+
+# Local temp
+temp/
+tmp/

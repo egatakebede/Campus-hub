@@ -17,6 +17,7 @@ const listingRoutes = require("./src/routes/listings");
 const bookmarkRoutes = require("./src/routes/bookmarks");
 const reportRoutes = require("./src/routes/reports");
 const searchRoutes = require("./src/routes/search");
+const servicesRoutes = require("./src/routes/services");
 
 app.use(express.json());
 
@@ -30,6 +31,7 @@ app.use("/listings", listingRoutes);
 app.use("/bookmarks", bookmarkRoutes);
 app.use("/reports", reportRoutes);
 app.use("/search", searchRoutes);
+app.use("/services", servicesRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
