@@ -20,6 +20,6 @@ router.get("/:id", getServiceDetail);
 router.post("/", jwtVerify, requireActive, createService);
 router.post("/upload-image", jwtVerify, requireActive, uploadServiceImage);
 router.patch("/:id", jwtVerify, requireActive, updateService);
-router.delete("/:id", jwtVerify, deleteService);
+router.delete("/:id", jwtVerify, requireActive, deleteService);
 
 module.exports = router;

@@ -67,7 +67,7 @@ async function uploadListingImage(req, res) {
 async function getListings(req, res) {
   try {
     const listings = await prisma.listing.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", deletedAt: null },
       orderBy: { createdAt: "desc" },
       include: {
         seller: {
@@ -100,6 +100,7 @@ async function searchListings(req, res) {
     const listings = await prisma.listing.findMany({
       where: {
         status: "ACTIVE",
+        deletedAt: null,
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
@@ -130,8 +131,8 @@ async function getListingDetail(req, res) {
   try {
     const { id } = req.params;
 
-    const listing = await prisma.listing.findUnique({
-      where: { id },
+    const listing = await prisma.listing.findFirst({
+      where: { id, deletedAt: null },
       include: {
         seller: {
           select: { name: true, username: true, phone: true, showPhone: true },

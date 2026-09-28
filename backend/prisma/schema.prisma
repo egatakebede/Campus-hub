@@ -24,7 +24,6 @@ model User {
   listings          Listing[]
   reports           Report[]
   serviceProfiles   ServiceProfile[]
-  role              UserRole         @default(STUDENT)
 
   @@index([status])
 }
@@ -143,8 +142,3 @@ enum ReportStatus {
   RESOLVED
 }
 
-enum UserRole {
-  STUDENT
-  MODERATOR
-  ADMIN
-}

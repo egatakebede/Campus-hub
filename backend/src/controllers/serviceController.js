@@ -4,7 +4,7 @@ const { uploadImage } = require("../services/uploadService");
 async function getServices(req, res) {
   try {
     const services = await prisma.serviceProfile.findMany({
-      where: { isActive: true },
+      where: { isActive: true, deletedAt: null },
       include: {
         provider: { select: { name: true, username: true } },
       },
@@ -38,6 +38,7 @@ async function searchServices(req, res) {
     const services = await prisma.serviceProfile.findMany({
       where: {
         isActive: true,
+        deletedAt: null,
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
@@ -69,8 +70,8 @@ async function getServiceDetail(req, res) {
   try {
     const { id } = req.params;
 
-    const service = await prisma.serviceProfile.findUnique({
-      where: { id },
+    const service = await prisma.serviceProfile.findFirst({
+      where: { id, deletedAt: null },
       include: {
         provider: {
           select: { name: true, username: true, phone: true, showPhone: true },
@@ -138,6 +139,16 @@ async function createService(req, res) {
     if (!title || !description || !category_id) {
       return res.status(400).json({ error: "title, description, and category_id are required" });
     }
+    const catId = Number(category_id);
+    if (!Number.isInteger(catId) || catId <= 0) {
+      return res.status(400).json({ error: "Invalid category_id" });
+    }
+    if (title.length > 150) {
+      return res.status(400).json({ error: "Title must be 150 characters or fewer" });
+    }
+    if (description.length > 2000) {
+      return res.status(400).json({ error: "Description must be 2000 characters or fewer" });
+    }
 
     const images = Array.isArray(portfolio_images) ? portfolio_images : [];
     if (images.length > 8) {
@@ -147,7 +158,7 @@ async function createService(req, res) {
     const service = await prisma.serviceProfile.create({
       data: {
         providerId: BigInt(providerId),
-        categoryId: Number(category_id),
+        categoryId: catId,
         title,
         description,
         portfolioImages: images,
@@ -170,7 +181,7 @@ async function updateService(req, res) {
     const { id } = req.params;
     const providerId = req.user?.telegramId;
 
-    const existing = await prisma.serviceProfile.findUnique({ where: { id } });
+    const existing = await prisma.serviceProfile.findFirst({ where: { id, deletedAt: null } });
     if (!existing) {
       return res.status(404).json({ error: "Service not found" });
     }
@@ -211,7 +222,7 @@ async function deleteService(req, res) {
     const providerId = req.user?.telegramId;
     const isModerator = req.user?.isModerator;
 
-    const existing = await prisma.serviceProfile.findUnique({ where: { id } });
+    const existing = await prisma.serviceProfile.findFirst({ where: { id, deletedAt: null } });
     if (!existing) {
       return res.status(404).json({ error: "Service not found" });
     }
@@ -220,7 +231,7 @@ async function deleteService(req, res) {
       return res.status(403).json({ error: "Not authorized to delete this service" });
     }
 
-    await prisma.serviceProfile.delete({ where: { id } });
+    await prisma.serviceProfile.update({ where: { id }, data: { deletedAt: new Date() } });
 
     return res.status(200).json({ message: "Service deleted" });
   } catch (err) {
