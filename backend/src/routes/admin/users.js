@@ -6,6 +6,8 @@ const {
   getPendingUsers,
   approveUser,
   rejectUser,
+  suspendUser,
+  banUser,
 } = require("../../controllers/moderationController");
 
 router.use(jwtVerify, requireModerator);
@@ -13,5 +15,7 @@ router.use(jwtVerify, requireModerator);
 router.get("/", getPendingUsers);
 router.patch("/:id/approve", approveUser);
 router.patch("/:id/reject", rejectUser);
+router.patch("/:id/suspend", suspendUser);
+router.patch("/:id/ban", banUser);
 
 module.exports = router;

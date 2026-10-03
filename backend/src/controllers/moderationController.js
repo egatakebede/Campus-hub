@@ -85,8 +85,48 @@ const rejectUser = async (req, res, next) => {
   }
 };
 
+const suspendUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!/^[0-9]+$/.test(id))
+      return res.status(400).json({ error: "Invalid telegram ID format" });
+
+    const user = await prisma.user.update({
+      where: { telegramId: BigInt(id) },
+      data: { status: "SUSPENDED" },
+    });
+    return res.status(200).json({
+      message: "User suspended successfully",
+      user: { ...user, telegramId: user.telegramId.toString() },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const banUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!/^[0-9]+$/.test(id))
+      return res.status(400).json({ error: "Invalid telegram ID format" });
+
+    const user = await prisma.user.update({
+      where: { telegramId: BigInt(id) },
+      data: { status: "BANNED" },
+    });
+    return res.status(200).json({
+      message: "User banned successfully",
+      user: { ...user, telegramId: user.telegramId.toString() },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPendingUsers,
   approveUser,
   rejectUser,
+  suspendUser,
+  banUser,
 };
