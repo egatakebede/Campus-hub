@@ -57,6 +57,33 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Telegram bot webhook — handles /start command
+app.post("/bot/webhook", async (req, res) => {
+  const message = req.body?.message;
+  if (!message) return res.sendStatus(200);
+
+  const chatId = message.chat?.id;
+  const text = message.text ?? '';
+
+  if (text.startsWith('/start')) {
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '🎓 Welcome to Campus Hub!\n\nTap the button below to open the marketplace.',
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '🚀 Open Campus Hub', web_app: { url: 'https://campus-hub2026.vercel.app' } }
+          ]]
+        }
+      })
+    });
+  }
+
+  res.sendStatus(200);
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
 });
