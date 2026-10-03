@@ -2,7 +2,25 @@ require("dotenv").config();
 require("./src/services/expiryCron");
 
 const express = require("express");
+const cors = require("cors");
 const app = express();
+
+const ALLOWED_ORIGINS = [
+  "https://campus-hub2026.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:4173",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Telegram WebView)
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
+    credentials: true,
+  })
+);
 
 const PORT = process.env.PORT || 4000;
 const HOST = process.env.HOST || "localhost";
