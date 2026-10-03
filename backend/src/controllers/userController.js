@@ -99,13 +99,12 @@ const getPublicProfile = async (req, res) => {
     }
 
     const publicProfile = {
-      first_name: user.first_name,
-      last_name: user.last_name,
+      name: user.name,
       username: user.username,
       bio: user.bio,
-      profile_pic_url: user.profile_pic_url,
+      profilePictureUrl: user.profilePictureUrl,
       department: user.department,
-      year_of_study: user.year_of_study,
+      yearOfStudy: user.yearOfStudy,
     };
 
     return res.status(200).json(publicProfile);
