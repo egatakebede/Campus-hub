@@ -42,6 +42,45 @@ const updateMe = async (req, res) => {
   }
 };
 
+const updateSettings = async (req, res) => {
+  try {
+    const { show_phone } = req.body;
+    if (typeof show_phone !== "boolean")
+      return res.status(400).json({ error: "show_phone must be a boolean" });
+
+    const user = await prisma.user.update({
+      where: { telegramId: BigInt(req.user.telegramId) },
+      data: { showPhone: show_phone },
+    });
+    return res.status(200).json({ showPhone: user.showPhone });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const updateHealthSettings = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { telegramId: BigInt(req.user.telegramId) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json({
+      db: "connected",
+      user: {
+        telegramId: user.telegramId.toString(),
+        name: user.name,
+        showPhone: user.showPhone,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 const getPublicProfile = async (req, res) => {
   try {
     const { telegramId } = req.params;
@@ -79,5 +118,7 @@ const getPublicProfile = async (req, res) => {
 module.exports = {
   getMe,
   updateMe,
+  updateSettings,
+  updateHealthSettings,
   getPublicProfile,
 };

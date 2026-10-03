@@ -11,12 +11,16 @@ const jwtVerify = (req, res, next) => {
     if (!token) return res.status(401).json({ error: "Unauthorized" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const telegramId = decoded.telegramId ?? decoded.id;
 
-    if (!decoded.telegramId || !decoded.status || decoded.isModerator === undefined) {
+    if (!telegramId || !decoded.status || decoded.isModerator === undefined) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      telegramId: String(telegramId),
+    };
     return next();
   } catch (err) {
     return res.status(401).json({ error: "Unauthorized" });
