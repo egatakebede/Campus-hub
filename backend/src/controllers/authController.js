@@ -1,6 +1,40 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 
+const adminLogin = async (req, res, next) => {
+  try {
+    const { telegramId } = req.body;
+    if (!telegramId) return res.status(400).json({ error: 'telegramId is required' });
+
+    const user = await prisma.user.findUnique({
+      where: { telegramId: BigInt(telegramId) },
+    });
+
+    if (!user || !user.isModerator) {
+      return res.status(403).json({ error: 'Not a moderator' });
+    }
+
+    const token = jwt.sign(
+      { telegramId: user.telegramId.toString(), status: user.status, isModerator: true },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' },
+    );
+
+    return res.status(200).json({
+      token,
+      user: {
+        telegramId: user.telegramId.toString(),
+        name: user.name,
+        username: user.username,
+        isModerator: true,
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const telegramAuth = async (req, res, next) => {
   try {
     const { id, first_name, last_name, username } = req.telegramUser;
@@ -84,6 +118,7 @@ const verifyStudent = async (req, res, next) => {
 };
 
 module.exports = {
+  adminLogin,
   telegramAuth,
   verifyStudent,
 };
