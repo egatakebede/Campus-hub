@@ -1,4 +1,4 @@
-const prisma = require("../../lib/prisma");
+const prisma = require("../lib/prisma");
 
 const deleteListingByModerator = async (req, res, next) => {
   try {
