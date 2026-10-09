@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { telegramAuth } = require("../../src/controllers/authController");
+const { telegramAuth, verifyStudent } = require("../../src/controllers/authController");
 const prisma = require("../../src/lib/prisma");
 
 // Mock process.env.JWT_SECRET
@@ -9,6 +9,8 @@ process.env.JWT_SECRET = "test_secret_key";
 jest.mock("../../src/lib/prisma", () => ({
   user: {
     upsert: jest.fn(),
+    findUnique: jest.fn(),
+    update: jest.fn(),
   },
 }));
 
@@ -101,6 +103,31 @@ describe("authController - telegramAuth", () => {
       status: "ACTIVE",
       isModerator: true,
       isOnboarded: true, // status is ACTIVE -> true
+    });
+  });
+
+  it("should reject duplicate verification submissions while a user is already PENDING", async () => {
+    req = {
+      user: { telegramId: "123456789" },
+      body: {
+        fullName: "Nahom Azmach",
+        studentIdNumber: "1938/27",
+        department: "Computer Science",
+      },
+    };
+
+    prisma.user.findUnique.mockResolvedValue({
+      telegramId: BigInt("123456789"),
+      status: "PENDING",
+    });
+
+    await verifyStudent(req, res, next);
+
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "PENDING",
+      message: "Verification request already submitted",
     });
   });
 });

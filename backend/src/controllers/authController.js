@@ -89,6 +89,10 @@ const telegramAuth = async (req, res, next) => {
  */
 const verifyStudent = async (req, res, next) => {
   try {
+    if (!req.user?.telegramId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const { fullName, studentIdNumber, department } = req.body;
 
     if (!fullName || !studentIdNumber || !department) {
@@ -103,13 +107,36 @@ const verifyStudent = async (req, res, next) => {
       });
     }
 
-    // Note: ID photo arrives as req.file (multer memory storage).
-    // Not persisted yet — frontend tracks PENDING in localStorage.
-    // TODO: persist VerificationRequest + Supabase upload when backend
-    // moderation queue is implemented.
+    const user = await prisma.user.findUnique({
+      where: { telegramId: BigInt(req.user.telegramId) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.status === "ACTIVE") {
+      return res.status(409).json({ error: "User is already verified" });
+    }
+
+    if (user.status === "PENDING") {
+      return res.status(200).json({
+        status: "PENDING",
+        message: "Verification request already submitted",
+      });
+    }
+
+    if (user.status === "SUSPENDED" || user.status === "BANNED") {
+      return res.status(403).json({ error: "This account cannot submit a verification request" });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { telegramId: BigInt(req.user.telegramId) },
+      data: { status: "PENDING" },
+    });
 
     return res.status(200).json({
-      status: "PENDING",
+      status: updatedUser.status,
       message: "Verification request received",
     });
   } catch (error) {

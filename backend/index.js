@@ -1,5 +1,6 @@
 require("dotenv").config();
 require("./src/services/expiryCron");
+const { seedAdmins } = require("./prisma/seed");
 
 const express = require("express");
 const cors = require("cors");
@@ -84,6 +85,13 @@ app.post("/bot/webhook", async (req, res) => {
   res.sendStatus(200);
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://${HOST}:${PORT}`);
-});
+seedAdmins()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running at http://${HOST}:${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Moderator seed failed:", error);
+    process.exit(1);
+  });
