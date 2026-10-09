@@ -47,24 +47,29 @@ model Category {
 }
 
 model Listing {
-  id          String        @id @default(uuid()) @db.Uuid
-  sellerId    BigInt
-  categoryId  Int
-  title       String
-  description String
-  price       Decimal       @db.Decimal(10, 2)
-  imageUrls   String[]
-  status      ListingStatus @default(ACTIVE)
-  expiresAt   DateTime
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
-  category    Category      @relation(fields: [categoryId], references: [id])
-  seller      User          @relation(fields: [sellerId], references: [telegramId])
+  id                String        @id @default(uuid()) @db.Uuid
+  sellerId          BigInt
+  categoryId        Int
+  title             String
+  description       String
+  price             Decimal       @db.Decimal(10, 2)
+  imageUrls         String[]
+  listingType       ListingType   @default(SELL)
+  details           Json          @default("{}")
+  campus            String        @default("")
+  originalListingId String?       @db.Uuid
+  status            ListingStatus @default(ACTIVE)
+  expiresAt         DateTime
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  category          Category      @relation(fields: [categoryId], references: [id])
+  seller            User          @relation(fields: [sellerId], references: [telegramId])
 
   @@index([sellerId])
   @@index([categoryId])
   @@index([status])
+  @@index([originalListingId])
   @@index([expiresAt])
   @@index([deletedAt])
 }
@@ -125,9 +130,18 @@ enum UserStatus {
 }
 
 enum ListingStatus {
+  PENDING
   ACTIVE
+  PAUSED
   SOLD
+  RENTED
   EXPIRED
+}
+
+enum ListingType {
+  SELL
+  RENT
+  SERVICE
 }
 
 enum CategoryType {
