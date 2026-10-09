@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { uploadImage } = require("../services/uploadService");
 
 const getMe = async (req, res) => {
   try {
@@ -12,9 +13,31 @@ const getMe = async (req, res) => {
   }
 };
 
-const updateMe = async (req, res) => {
+const updateMe = async (req, res, next) => {
   try {
-    const { name, phone, department, yearOfStudy, bio, profilePictureUrl } = req.body;
+    const {
+      name,
+      username,
+      studentIdNumber,
+      phone,
+      department,
+      yearOfStudy,
+      bio,
+      profilePictureUrl,
+    } = req.body;
+
+    const telegramId = BigInt(req.user.telegramId);
+    const currentUser = await prisma.user.findUnique({
+      where: { telegramId },
+      select: { status: true, verificationSubmittedAt: true },
+    });
+    if (!currentUser) return res.status(404).json({ error: "User not found" });
+
+    const identityLocked = currentUser.status === "ACTIVE" ||
+      (currentUser.status === "PENDING" && currentUser.verificationSubmittedAt);
+    if (identityLocked && [name, studentIdNumber, department, yearOfStudy].some((field) => field !== undefined)) {
+      return res.status(403).json({ error: "Verified identity fields cannot be changed" });
+    }
 
     // Required fields cannot be nulled
     if (name !== undefined && !String(name).trim())
@@ -23,22 +46,48 @@ const updateMe = async (req, res) => {
       return res.status(400).json({ error: "phone cannot be empty" });
     if (department !== undefined && !String(department).trim())
       return res.status(400).json({ error: "department cannot be empty" });
+    if (studentIdNumber !== undefined && !/^\d{1,6}\/\d{2}$/.test(String(studentIdNumber).trim()))
+      return res.status(400).json({ error: "Invalid student ID format" });
+
+    let parsedYear;
+    if (yearOfStudy !== undefined) {
+      parsedYear = Number(yearOfStudy);
+      if (!Number.isInteger(parsedYear) || parsedYear < 0) {
+        return res.status(400).json({ error: "yearOfStudy must be a non-negative integer" });
+      }
+    }
 
     const data = {};
     if (name !== undefined) data.name = String(name).trim();
+    if (username !== undefined) data.username = String(username).trim() || null;
+    if (studentIdNumber !== undefined) data.studentIdNumber = String(studentIdNumber).trim();
     if (phone !== undefined) data.phone = String(phone).trim();
     if (department !== undefined) data.department = String(department).trim();
-    if (yearOfStudy !== undefined) data.yearOfStudy = parseInt(yearOfStudy);
+    if (parsedYear !== undefined) data.yearOfStudy = parsedYear;
     if (bio !== undefined) data.bio = bio;
     if (profilePictureUrl !== undefined) data.profilePictureUrl = profilePictureUrl;
 
     const user = await prisma.user.update({
-      where: { telegramId: BigInt(req.user.telegramId) },
+      where: { telegramId },
       data,
     });
     return res.status(200).json({ ...user, telegramId: user.telegramId.toString() });
   } catch (error) {
-    return res.status(500).json({ error: "Internal server error" });
+    if (error.code === "P2002" && error.meta?.target?.includes("username")) {
+      return res.status(409).json({ error: "Telegram username is already in use" });
+    }
+    return next(error);
+  }
+};
+
+const uploadProfilePhoto = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "A profile photo is required" });
+
+    const profilePictureUrl = await uploadImage(req.file, "listing-images");
+    return res.status(200).json({ profilePictureUrl });
+  } catch (error) {
+    return next(error);
   }
 };
 
@@ -117,6 +166,7 @@ const getPublicProfile = async (req, res) => {
 module.exports = {
   getMe,
   updateMe,
+  uploadProfilePhoto,
   updateSettings,
   updateHealthSettings,
   getPublicProfile,

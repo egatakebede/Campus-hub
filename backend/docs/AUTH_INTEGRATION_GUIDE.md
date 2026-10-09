@@ -9,6 +9,18 @@ It covers:
 - Protecting routes
 - Testing authenticated endpoints
 
+## Student Verification Deployment
+
+Verification submissions are stored on the user record and their ID photos
+are stored in a private Supabase Storage bucket. Create a private bucket named
+`verification-ids` (or set `SUPABASE_VERIFICATION_BUCKET` to another private
+bucket name) before accepting submissions. Do not make this bucket public;
+moderator review uses short-lived signed URLs.
+
+The backend applies pending Prisma migrations on startup, including when the
+hosting service starts it with `node index.js` directly. You can also apply
+migrations manually from the backend directory with `npm run migrate:deploy`.
+
 ## Import the Authentication Middleware
 
 ```javascript

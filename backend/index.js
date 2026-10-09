@@ -1,4 +1,16 @@
 require("dotenv").config();
+const { execFileSync } = require("node:child_process");
+
+try {
+  execFileSync("npx", ["prisma", "migrate", "deploy"], {
+    cwd: __dirname,
+    stdio: "inherit",
+  });
+} catch (error) {
+  console.error("Database migrations failed:", error);
+  process.exit(1);
+}
+
 require("./src/services/expiryCron");
 const { seedAdmins } = require("./prisma/seed");
 

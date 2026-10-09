@@ -69,4 +69,70 @@ describe('userController settings', () => {
       },
     });
   });
+
+  test('updateMe rejects identity changes for verified users', async () => {
+    const req = {
+      user: { telegramId: '123456789' },
+      body: { name: 'Different Name' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+    prisma.user.findUnique.mockResolvedValueOnce({
+      status: 'ACTIVE',
+      verificationSubmittedAt: new Date(),
+    });
+
+    await userController.updateMe(req, res, next);
+
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Verified identity fields cannot be changed',
+    });
+  });
+
+  test('updateMe persists editable profile fields using backend column names', async () => {
+    const req = {
+      user: { telegramId: '123456789' },
+      body: {
+        name: 'Student Name',
+        username: 'student_name',
+        studentIdNumber: '1938/27',
+        department: 'Computer Science',
+        yearOfStudy: '3',
+        bio: 'Hello campus',
+      },
+    };
+    const res = createRes();
+    const next = jest.fn();
+    prisma.user.findUnique.mockResolvedValueOnce({
+      status: 'PENDING',
+      verificationSubmittedAt: null,
+    });
+    prisma.user.update.mockResolvedValueOnce({
+      telegramId: BigInt('123456789'),
+      name: 'Student Name',
+      username: 'student_name',
+      studentIdNumber: '1938/27',
+      department: 'Computer Science',
+      yearOfStudy: 3,
+      bio: 'Hello campus',
+    });
+
+    await userController.updateMe(req, res, next);
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { telegramId: BigInt('123456789') },
+      data: {
+        name: 'Student Name',
+        username: 'student_name',
+        studentIdNumber: '1938/27',
+        department: 'Computer Science',
+        yearOfStudy: 3,
+        bio: 'Hello campus',
+      },
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(next).not.toHaveBeenCalled();
+  });
 });

@@ -1,5 +1,17 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
+const {
+  uploadPrivateImage,
+  removePrivateImage,
+} = require("../services/uploadService");
+
+const VERIFICATION_BUCKET = process.env.SUPABASE_VERIFICATION_BUCKET || "verification-ids";
+
+function getVerificationStatus(user) {
+  if (user.status === "ACTIVE") return "VERIFIED";
+  if (user.status === "PENDING" && user.verificationSubmittedAt) return "PENDING";
+  return "UNVERIFIED";
+}
 
 const adminLogin = async (req, res, next) => {
   try {
@@ -72,8 +84,17 @@ const telegramAuth = async (req, res, next) => {
       user: {
         telegramId: user.telegramId.toString(),
         status: user.status,
+        verificationStatus: getVerificationStatus(user),
         isModerator: user.isModerator || false,
         isOnboarded,
+        fullName: user.name,
+        username: user.username,
+        department: user.department,
+        yearOfStudy: user.yearOfStudy,
+        studentIdNumber: user.studentIdNumber,
+        verificationSubmittedAt: user.verificationSubmittedAt,
+        bio: user.bio,
+        profilePictureUrl: user.profilePictureUrl,
       },
     });
   } catch (error) {
@@ -83,9 +104,7 @@ const telegramAuth = async (req, res, next) => {
 
 /**
  * POST /auth/verify
- * Accepts student verification submission (multipart form).
- * Frontend handles the PENDING state locally; this endpoint just
- * acknowledges receipt so the UI doesn't show a failure.
+ * Accepts and persists a student verification submission (multipart form).
  */
 const verifyStudent = async (req, res, next) => {
   try {
@@ -119,7 +138,7 @@ const verifyStudent = async (req, res, next) => {
       return res.status(409).json({ error: "User is already verified" });
     }
 
-    if (user.status === "PENDING") {
+    if (user.status === "PENDING" && user.verificationSubmittedAt) {
       return res.status(200).json({
         status: "PENDING",
         message: "Verification request already submitted",
@@ -130,15 +149,45 @@ const verifyStudent = async (req, res, next) => {
       return res.status(403).json({ error: "This account cannot submit a verification request" });
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { telegramId: BigInt(req.user.telegramId) },
-      data: { status: "PENDING" },
-    });
+    if (!req.file) {
+      return res.status(400).json({ error: "A student ID photo is required" });
+    }
 
-    return res.status(200).json({
-      status: updatedUser.status,
-      message: "Verification request received",
-    });
+    let idPhotoPath;
+    try {
+      idPhotoPath = await uploadPrivateImage(
+        req.file,
+        VERIFICATION_BUCKET,
+        String(req.user.telegramId),
+      );
+
+      const updatedUser = await prisma.user.update({
+        where: { telegramId: BigInt(req.user.telegramId) },
+        data: {
+          name: String(fullName).trim(),
+          department: String(department).trim(),
+          studentIdNumber: String(studentIdNumber).trim(),
+          idPhotoPath,
+          verificationSubmittedAt: new Date(),
+          status: "PENDING",
+        },
+      });
+
+      return res.status(200).json({
+        status: "PENDING",
+        verificationStatus: getVerificationStatus(updatedUser),
+        message: "Verification request received",
+      });
+    } catch (error) {
+      if (idPhotoPath) {
+        try {
+          await removePrivateImage(idPhotoPath, VERIFICATION_BUCKET);
+        } catch (cleanupError) {
+          console.error("Failed to clean up an unlinked verification photo:", cleanupError);
+        }
+      }
+      throw error;
+    }
   } catch (error) {
     next(error);
   }
@@ -148,4 +197,5 @@ module.exports = {
   adminLogin,
   telegramAuth,
   verifyStudent,
+  getVerificationStatus,
 };

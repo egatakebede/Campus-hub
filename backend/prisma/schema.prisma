@@ -7,25 +7,29 @@ datasource db {
 }
 
 model User {
-  telegramId        BigInt           @id
-  name              String
-  username          String?          @unique
-  phone             String?
-  department        String
-  yearOfStudy       Int
-  bio               String?
-  profilePictureUrl String?
-  status            UserStatus       @default(PENDING)
-  isModerator       Boolean          @default(false)
-  showPhone         Boolean          @default(true)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  bookmarks         Bookmark[]
-  listings          Listing[]
-  reports           Report[]
-  serviceProfiles   ServiceProfile[]
+  telegramId              BigInt           @id
+  name                    String
+  username                String?          @unique
+  phone                   String?
+  department              String
+  yearOfStudy             Int
+  bio                     String?
+  profilePictureUrl       String?
+  status                  UserStatus       @default(PENDING)
+  isModerator             Boolean          @default(false)
+  showPhone               Boolean          @default(true)
+  studentIdNumber         String?
+  idPhotoPath             String?
+  verificationSubmittedAt DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  bookmarks               Bookmark[]
+  listings                Listing[]
+  reports                 Report[]
+  serviceProfiles         ServiceProfile[]
 
   @@index([status])
+  @@index([verificationSubmittedAt])
 }
 
 model Category {
@@ -141,4 +145,3 @@ enum ReportStatus {
   REVIEWED
   RESOLVED
 }
-
