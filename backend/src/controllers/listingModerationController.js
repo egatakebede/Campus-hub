@@ -1,5 +1,6 @@
 const prisma = require("../lib/prisma");
 const { notifySavedSearchesForListing } = require("../services/savedSearchNotificationService");
+const { recordAdminAction } = require("../services/adminAuditService");
 
 async function getPendingListings(req, res, next) {
   try {
@@ -100,6 +101,13 @@ async function approveListing(req, res, next) {
       }
     }
 
+    await recordAdminAction(req, {
+      action: "Approved listing",
+      targetType: "LISTING",
+      targetId: pending.id,
+      details: pending.title,
+    });
+
     return res.status(200).json({ message: "Listing approved successfully" });
   } catch (error) {
     return next(error);
@@ -117,6 +125,12 @@ async function rejectListing(req, res, next) {
     if (!result.count) {
       return res.status(404).json({ error: "Pending listing not found" });
     }
+
+    await recordAdminAction(req, {
+      action: "Rejected listing",
+      targetType: "LISTING",
+      targetId: req.params.id,
+    });
 
     return res.status(200).json({ message: "Listing rejected successfully" });
   } catch (error) {

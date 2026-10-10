@@ -29,6 +29,7 @@ model User {
   ratingsGiven            Rating[]
   savedSearches           SavedSearch[]
   serviceProfiles         ServiceProfile[]
+  adminActions            AdminAuditLog[]
 
   @@index([status])
   @@index([verificationSubmittedAt])
@@ -115,6 +116,8 @@ model Report {
   targetId   String       @db.Uuid
   targetType TargetType
   reason     String
+  details    String?
+  resolutionNotes String?
   status     ReportStatus @default(PENDING)
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -122,6 +125,20 @@ model Report {
 
   @@unique([reporterId, targetId, targetType])
   @@index([status])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    BigInt
+  action     String   @db.VarChar(80)
+  targetType String   @db.VarChar(32)
+  targetId   String?  @db.VarChar(128)
+  details    String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+  actor      User     @relation(fields: [actorId], references: [telegramId])
+
+  @@index([createdAt])
+  @@index([actorId])
 }
 
 model Rating {

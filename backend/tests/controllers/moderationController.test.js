@@ -1,8 +1,10 @@
 const prisma = require("../../src/lib/prisma");
 const {
   approveUser,
+  getAllUsers,
   getPendingUsers,
   rejectUser,
+  setUserStatus,
 } = require("../../src/controllers/moderationController");
 const {
   createPrivateImageSignedUrl,
@@ -124,5 +126,84 @@ describe("moderationController verification requests", () => {
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it("searches and paginates non-moderator accounts", async () => {
+    req.query = { q: "student", status: "ACTIVE", page: "2", limit: "25" };
+    prisma.user.findMany.mockResolvedValue([]);
+    prisma.user.count.mockResolvedValue(30);
+
+    await getAllUsers(req, res, next);
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({
+        isModerator: false,
+        status: "ACTIVE",
+        OR: expect.arrayContaining([
+          { name: { contains: "student", mode: "insensitive" } },
+        ]),
+      }),
+      skip: 25,
+      take: 25,
+    }));
+    expect(res.json.mock.calls[0][0].pagination).toMatchObject({
+      page: 2,
+      limit: 25,
+      total: 30,
+      totalPages: 2,
+    });
+  });
+
+  it("does not allow moderators to change their own access", async () => {
+    req.params.id = "123456789";
+    req.user = { telegramId: "123456789" };
+    req.body = { status: "BANNED" };
+
+    await setUserStatus(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("does not allow changing another moderator's access", async () => {
+    req.params.id = "987654321";
+    req.user = { telegramId: "123456789" };
+    req.body = { status: "BANNED" };
+    prisma.user.findUnique.mockResolvedValue({
+      telegramId: BigInt("987654321"),
+      name: "Moderator",
+      status: "ACTIVE",
+      isModerator: true,
+    });
+
+    await setUserStatus(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("changes an ordinary user's status with a guarded update", async () => {
+    req.params.id = "123456789";
+    req.user = { telegramId: "987654321" };
+    req.body = { status: "SUSPENDED" };
+    prisma.user.findUnique.mockResolvedValue({
+      telegramId: BigInt("123456789"),
+      name: "Student",
+      status: "ACTIVE",
+      isModerator: false,
+    });
+    prisma.user.updateMany.mockResolvedValue({ count: 1 });
+
+    await setUserStatus(req, res, next);
+
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: {
+        telegramId: BigInt("123456789"),
+        isModerator: false,
+        status: "ACTIVE",
+      },
+      data: { status: "SUSPENDED" },
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 });
