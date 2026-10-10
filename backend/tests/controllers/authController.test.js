@@ -236,4 +236,35 @@ describe("authController - telegramAuth", () => {
     expect(next).not.toHaveBeenCalled();
     expect(removePrivateImage).not.toHaveBeenCalled();
   });
+
+  it("returns a safe, actionable error when verification photo storage is unavailable", async () => {
+    req = {
+      user: { telegramId: "123456789" },
+      body: {
+        fullName: "Nahom Azmach",
+        studentIdNumber: "1938/27",
+        department: "Computer Science, Year 3",
+      },
+      file: {
+        buffer: Buffer.from("student id image"),
+        mimetype: "image/jpeg",
+        size: 16,
+      },
+    };
+    prisma.user.findUnique.mockResolvedValue({
+      telegramId: BigInt("123456789"),
+      status: "PENDING",
+      verificationSubmittedAt: null,
+    });
+    uploadPrivateImage.mockRejectedValue(new Error("Supabase bucket is not configured"));
+
+    await verifyStudent(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Student ID photo storage is unavailable. Please contact support if the problem continues.",
+    });
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
 });

@@ -17,6 +17,11 @@ are stored in a private Supabase Storage bucket. Create a private bucket named
 bucket name) before accepting submissions. Do not make this bucket public;
 moderator review uses short-lived signed URLs.
 
+The Render backend environment must also define `SUPABASE_URL` and
+`SUPABASE_KEY` with credentials authorized to upload to and create signed URLs
+from that bucket. If photo storage fails, the backend logs the storage error
+while returning a safe, actionable message to the student.
+
 The backend applies pending Prisma migrations on startup, including when the
 hosting service starts it with `node index.js` directly. You can also apply
 migrations manually from the backend directory with `npm run migrate:deploy`.

@@ -160,7 +160,14 @@ const verifyStudent = async (req, res, next) => {
         VERIFICATION_BUCKET,
         String(req.user.telegramId),
       );
+    } catch (error) {
+      console.error("Student verification photo upload failed:", error);
+      return res.status(503).json({
+        error: "Student ID photo storage is unavailable. Please contact support if the problem continues.",
+      });
+    }
 
+    try {
       const updatedUser = await prisma.user.update({
         where: { telegramId: BigInt(req.user.telegramId) },
         data: {
