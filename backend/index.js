@@ -84,10 +84,12 @@ app.post("/bot/webhook", async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
-        text: '🎓 Welcome to Campus Hub!\n\nTap the button below to open the marketplace.',
+        text: '🎓 Welcome to Campus Hub!\n\nChoose where you want to go:',
         reply_markup: {
           inline_keyboard: [[
             { text: '🚀 Open Campus Hub', web_app: { url: 'https://campus-hub2026.vercel.app' } }
+          ], [
+            { text: '🛡️ Admin Access', web_app: { url: 'https://campus-hub2026.vercel.app/admin/login' } }
           ]]
         }
       })
