@@ -4,6 +4,7 @@ const {
   uploadPrivateImage,
   removePrivateImage,
 } = require("../services/uploadService");
+const { notifyAdminsOfVerification } = require("../services/verificationNotificationService");
 
 const VERIFICATION_BUCKET = process.env.SUPABASE_VERIFICATION_BUCKET || "verification-ids";
 
@@ -178,6 +179,10 @@ const verifyStudent = async (req, res, next) => {
           verificationSubmittedAt: new Date(),
           status: "PENDING",
         },
+      });
+
+      notifyAdminsOfVerification(updatedUser).catch((notificationError) => {
+        console.error("Admin verification notification failed:", notificationError.message);
       });
 
       return res.status(200).json({

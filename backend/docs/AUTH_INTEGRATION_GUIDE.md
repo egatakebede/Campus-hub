@@ -26,6 +26,12 @@ The backend applies pending Prisma migrations on startup, including when the
 hosting service starts it with `node index.js` directly. You can also apply
 migrations manually from the backend directory with `npm run migrate:deploy`.
 
+After a student submits verification, the backend sends a Telegram DM to each
+numeric ID in the comma-separated `ADMIN_TELEGRAM_IDS` setting. Configure this
+on the backend host, and have each moderator start the Campus Hub bot once so
+Telegram allows the bot to message them. The notification includes the review
+queue link but never includes the student ID number or photo.
+
 ## Public schema row-level security
 
 The RLS migrations enable row-level security on `User`, `Category`, `Listing`,

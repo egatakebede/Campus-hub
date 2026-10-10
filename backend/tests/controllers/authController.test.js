@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const { telegramAuth, verifyStudent } = require("../../src/controllers/authController");
 const prisma = require("../../src/lib/prisma");
 const { uploadPrivateImage, removePrivateImage } = require("../../src/services/uploadService");
+const { notifyAdminsOfVerification } = require("../../src/services/verificationNotificationService");
 
 // Mock process.env.JWT_SECRET
 process.env.JWT_SECRET = "test_secret_key";
@@ -18,6 +19,10 @@ jest.mock("../../src/lib/prisma", () => ({
 jest.mock("../../src/services/uploadService", () => ({
   uploadPrivateImage: jest.fn(),
   removePrivateImage: jest.fn(),
+}));
+
+jest.mock("../../src/services/verificationNotificationService", () => ({
+  notifyAdminsOfVerification: jest.fn().mockResolvedValue({ sent: 1 }),
 }));
 
 describe("authController - telegramAuth", () => {
@@ -228,6 +233,10 @@ describe("authController - telegramAuth", () => {
       }),
     }));
     expect(res.status).toHaveBeenCalledWith(200);
+    expect(notifyAdminsOfVerification).toHaveBeenCalledWith(expect.objectContaining({
+      name: "Nahom Azmach",
+      department: "Computer Science, Year 3",
+    }));
     expect(res.json).toHaveBeenCalledWith({
       status: "PENDING",
       verificationStatus: "PENDING",
