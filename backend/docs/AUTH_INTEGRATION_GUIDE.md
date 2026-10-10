@@ -28,12 +28,13 @@ migrations manually from the backend directory with `npm run migrate:deploy`.
 
 ## Public schema row-level security
 
-The RLS migration enables row-level security on `User`, `Category`, `Listing`,
-`ServiceProfile`, `Bookmark`, `Report`, and `_prisma_migrations`. Supabase
-Data API roles may read only active categories, active non-deleted listings,
-and active non-deleted services. No direct Data API policies are provided for
-user records, bookmarks, reports, or Prisma migration metadata; access to those
-records must go through the backend's authenticated routes.
+The RLS migrations enable row-level security on `User`, `Category`, `Listing`,
+`ServiceProfile`, `Bookmark`, `Report`, `Rating`, `SavedSearch`, and
+`_prisma_migrations`. Supabase Data API roles may read only active categories,
+active non-deleted listings, and active non-deleted services. No direct Data API
+policies are provided for user records, bookmarks, reports, ratings, saved
+searches, or Prisma migration metadata; access to those records must go through
+the backend's authenticated routes.
 
 The backend uses Prisma over its server-only `DATABASE_URL`. Keep that
 credential out of the frontend and use the trusted migration/table-owner
@@ -42,7 +43,7 @@ forcing it on the table owner, so the backend's trusted Prisma connection can
 continue to perform its API operations. Do not add a browser-side Supabase
 database credential or expose private table policies to anonymous clients.
 
-After deployment, verify in Supabase Advisor that RLS is enabled on all seven
+After deployment, verify in Supabase Advisor that RLS is enabled on all nine
 tables and test public catalog reads plus private table denial through the
 Supabase Data API.
 

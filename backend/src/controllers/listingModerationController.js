@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { notifySavedSearchesForListing } = require("../services/savedSearchNotificationService");
 
 async function getPendingListings(req, res, next) {
   try {
@@ -49,6 +50,11 @@ async function approveListing(req, res, next) {
       });
       if (!result.count) {
         return res.status(409).json({ error: "Listing was already moderated" });
+      }
+      try {
+        await notifySavedSearchesForListing(pending);
+      } catch (notificationError) {
+        console.error("Saved-search notifications failed:", notificationError.message);
       }
     } else {
       const applied = await prisma.$transaction(async (transaction) => {

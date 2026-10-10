@@ -26,6 +26,8 @@ model User {
   bookmarks               Bookmark[]
   listings                Listing[]
   reports                 Report[]
+  ratingsGiven            Rating[]
+  savedSearches           SavedSearch[]
   serviceProfiles         ServiceProfile[]
 
   @@index([status])
@@ -122,6 +124,32 @@ model Report {
   @@index([status])
 }
 
+model Rating {
+  id         String           @id @default(uuid()) @db.Uuid
+  reviewerId BigInt
+  targetType RatingTargetType
+  targetId   String
+  score      Int
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  reviewer   User             @relation(fields: [reviewerId], references: [telegramId], onDelete: Cascade)
+
+  @@unique([reviewerId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model SavedSearch {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          BigInt
+  query           String   @db.VarChar(80)
+  normalizedQuery String   @db.VarChar(80)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [telegramId], onDelete: Cascade)
+
+  @@unique([userId, normalizedQuery])
+  @@index([userId])
+}
+
 enum UserStatus {
   PENDING
   ACTIVE
@@ -158,4 +186,10 @@ enum ReportStatus {
   PENDING
   REVIEWED
   RESOLVED
+}
+
+enum RatingTargetType {
+  SELLER
+  LISTING
+  APP
 }

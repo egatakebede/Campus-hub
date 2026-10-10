@@ -15,6 +15,12 @@ jest.mock("../../src/lib/prisma", () => ({
   $transaction: jest.fn(),
 }));
 
+jest.mock("../../src/services/savedSearchNotificationService", () => ({
+  notifySavedSearchesForListing: jest.fn().mockResolvedValue(undefined),
+}));
+
+const { notifySavedSearchesForListing } = require("../../src/services/savedSearchNotificationService");
+
 describe("listing moderation persistence", () => {
   let req;
   let res;
@@ -56,10 +62,11 @@ describe("listing moderation persistence", () => {
   });
 
   it("publishes a persisted pending listing on approval", async () => {
-    prisma.listing.findFirst.mockResolvedValue({
+    const pending = {
       id: req.params.id,
       originalListingId: null,
-    });
+    };
+    prisma.listing.findFirst.mockResolvedValue(pending);
     prisma.listing.updateMany.mockResolvedValue({ count: 1 });
 
     await approveListing(req, res, next);
@@ -70,6 +77,7 @@ describe("listing moderation persistence", () => {
     });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(next).not.toHaveBeenCalled();
+    expect(notifySavedSearchesForListing).toHaveBeenCalledWith(pending);
   });
 
   it("applies an approved pending edit to the original listing atomically", async () => {
@@ -113,6 +121,7 @@ describe("listing moderation persistence", () => {
     });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(next).not.toHaveBeenCalled();
+    expect(notifySavedSearchesForListing).not.toHaveBeenCalled();
   });
 
   it("persists rejection by soft-deleting only a pending listing", async () => {
